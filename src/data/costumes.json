@@ -1,0 +1,37 @@
+{
+  "hats": [
+    { "id": "h_none",   "name": "없음",       "rarity": "N",   "starter": true },
+    { "id": "h_band",   "name": "머리띠",     "rarity": "N",   "starter": true },
+    { "id": "h_cap",    "name": "야구모자",   "rarity": "N",   "starter": false },
+    { "id": "h_straw",  "name": "밀짚모자",   "rarity": "R",   "starter": false },
+    { "id": "h_beret",  "name": "베레모",     "rarity": "R",   "starter": false },
+    { "id": "h_pot",    "name": "냄비투구",   "rarity": "R",   "starter": false },
+    { "id": "h_chef",   "name": "셰프모자",   "rarity": "SR",  "starter": false },
+    { "id": "h_helmet", "name": "미식헬멧",   "rarity": "SR",  "starter": false },
+    { "id": "h_horn",   "name": "맛뿔",       "rarity": "SSR", "starter": false },
+    { "id": "h_crown",  "name": "미식왕관",   "rarity": "SSR", "starter": false }
+  ],
+  "colors": [
+    { "id": "c_blue",   "name": "파랑",   "hex": "#3b82f6", "rarity": "N",   "starter": true },
+    { "id": "c_red",    "name": "빨강",   "hex": "#ef4444", "rarity": "N",   "starter": true },
+    { "id": "c_green",  "name": "초록",   "hex": "#22c55e", "rarity": "N",   "starter": false },
+    { "id": "c_orange", "name": "주황",   "hex": "#f97316", "rarity": "N",   "starter": false },
+    { "id": "c_purple", "name": "보라",   "hex": "#a855f7", "rarity": "R",   "starter": false },
+    { "id": "c_pink",   "name": "분홍",   "hex": "#ec4899", "rarity": "R",   "starter": false },
+    { "id": "c_teal",   "name": "청록",   "hex": "#14b8a6", "rarity": "R",   "starter": false },
+    { "id": "c_gold",   "name": "황금",   "hex": "#eab308", "rarity": "SR",  "starter": false },
+    { "id": "c_void",   "name": "칠흑",   "hex": "#334155", "rarity": "SR",  "starter": false },
+    { "id": "c_rainbow","name": "무지개", "hex": "#f43f5e", "rarity": "SSR", "starter": false }
+  ],
+  "accessories": [
+    { "id": "a_none",       "name": "없음",     "rarity": "N",   "starter": true },
+    { "id": "a_glasses",    "name": "선글라스", "rarity": "N",   "starter": false },
+    { "id": "a_spoon",      "name": "숟가락",   "rarity": "N",   "starter": false },
+    { "id": "a_chopstick",  "name": "젓가락",   "rarity": "N",   "starter": false },
+    { "id": "a_scarf",      "name": "목도리",   "rarity": "R",   "starter": false },
+    { "id": "a_bag",        "name": "먹방가방", "rarity": "R",   "starter": false },
+    { "id": "a_apron",      "name": "앞치마",   "rarity": "R",   "starter": false },
+    { "id": "a_cape",       "name": "미식망토", "rarity": "SR",  "starter": false },
+    { "id": "a_wings",      "name": "천사날개", "rarity": "SSR", "starter": false }
+  ]
+}

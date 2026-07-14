@@ -1,0 +1,8 @@
+[
+  { "id": "t_newbie",   "name": "입문 미식가",   "requiredConquests": 0,  "desc": "여정의 시작", "color": "#94a3b8" },
+  { "id": "t_wanderer", "name": "동네 방랑자",   "requiredConquests": 1,  "desc": "첫 맛집 공략", "color": "#22c55e" },
+  { "id": "t_pioneer",  "name": "동네 탐험가",   "requiredConquests": 5,  "desc": "맛집 5곳 공략", "color": "#38bdf8" },
+  { "id": "t_hunter",   "name": "맛집 헌터",     "requiredConquests": 10, "desc": "맛집 10곳 공략", "color": "#a78bfa" },
+  { "id": "t_gourmet",  "name": "미식가",        "requiredConquests": 20, "desc": "맛집 20곳 공략", "color": "#f59e0b" },
+  { "id": "t_conqueror","name": "인천 정복자",   "requiredConquests": 30, "desc": "맛집 30곳 공략", "color": "#ef4444" }
+]

@@ -1,0 +1,12 @@
+[
+  { "id": "m_bap",     "name": "밥알몬",   "emoji": "🍚", "rarity": "N",  "desc": "가장 흔한 맛몬. 든든하다." },
+  { "id": "m_kimchi",  "name": "김치몬",   "emoji": "🥬", "rarity": "N",  "desc": "매콤하게 발효된 친구." },
+  { "id": "m_ddeok",   "name": "떡볶몬",   "emoji": "🌶️", "rarity": "R",  "desc": "화가 나면 더 매워진다." },
+  { "id": "m_chicken", "name": "치킨몬",   "emoji": "🍗", "rarity": "R",  "desc": "날개가 있지만 못 난다." },
+  { "id": "m_sushi",   "name": "초밥몬",   "emoji": "🍣", "rarity": "SR", "desc": "차갑고 도도하다." },
+  { "id": "m_ramen",   "name": "라면몬",   "emoji": "🍜", "rarity": "R",  "desc": "3분이면 각성한다." },
+  { "id": "m_pizza",   "name": "피자몬",   "emoji": "🍕", "rarity": "SR", "desc": "8조각으로 분열한다." },
+  { "id": "m_cake",    "name": "케이크몬", "emoji": "🍰", "rarity": "SR", "desc": "생일에만 나타난다." },
+  { "id": "m_burger",  "name": "버거몬",   "emoji": "🍔", "rarity": "R",  "desc": "층이 많을수록 강하다." },
+  { "id": "m_golden",  "name": "황금돈까스몬", "emoji": "🥇", "rarity": "SSR", "desc": "전설의 맛몬. 튀김옷이 금빛." }
+]

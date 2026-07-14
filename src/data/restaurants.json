@@ -1,0 +1,18 @@
+[
+  { "id": "r01", "name": "동인천 왕손칼국수", "category": "한식",   "emoji": "🍲", "district": "중구",     "address": "인천 중구 우현로 12", "lat": 37.4735, "lng": 126.6320, "rating": 4.6, "conquered": false, "reviews": [ { "id": "rv1", "author": "미식가김", "title": "국물이 예술", "body": "칼국수 국물이 진하고 김치가 미쳤음. 재방문 각.", "stars": 5, "date": "2026-06-30" } ] },
+  { "id": "r02", "name": "차이나타운 홍보각", "category": "중식",   "emoji": "🥟", "district": "중구",     "address": "인천 중구 차이나타운로 55", "lat": 37.4750, "lng": 126.6178, "rating": 4.4, "conquered": true,  "reviews": [ { "id": "rv2", "author": "먹깨비", "title": "짜장 원조 맛", "body": "웨이팅 40분인데 그만한 값어치 함.", "stars": 4, "date": "2026-07-02" } ] },
+  { "id": "r03", "name": "월미도 조개구이촌", "category": "해산물", "emoji": "🦪", "district": "중구",     "address": "인천 중구 월미문화로 8", "lat": 37.4740, "lng": 126.5975, "rating": 4.2, "conquered": false, "reviews": [] },
+  { "id": "r04", "name": "구월동 불백집",     "category": "한식",   "emoji": "🥓", "district": "남동구",   "address": "인천 남동구 구월로 101", "lat": 37.4480, "lng": 126.7020, "rating": 4.5, "conquered": true,  "reviews": [ { "id": "rv3", "author": "점심러", "title": "가성비 甲", "body": "9천원에 이 정도면 반칙.", "stars": 5, "date": "2026-06-21" } ] },
+  { "id": "r05", "name": "로데오 수제버거",   "category": "양식",   "emoji": "🍔", "district": "남동구",   "address": "인천 남동구 예술로 20", "lat": 37.4510, "lng": 126.7005, "rating": 4.1, "conquered": false, "reviews": [] },
+  { "id": "r06", "name": "간석 옛날통닭",     "category": "치킨",   "emoji": "🍗", "district": "남동구",   "address": "인천 남동구 백범로 300", "lat": 37.4650, "lng": 126.7080, "rating": 4.7, "conquered": false, "reviews": [] },
+  { "id": "r07", "name": "송도 라멘공방",     "category": "일식",   "emoji": "🍜", "district": "연수구",   "address": "인천 연수구 컨벤시아대로 40", "lat": 37.3890, "lng": 126.6390, "rating": 4.3, "conquered": true,  "reviews": [] },
+  { "id": "r08", "name": "센트럴파크 스시야", "category": "일식",   "emoji": "🍣", "district": "연수구",   "address": "인천 연수구 아트센터대로 9", "lat": 37.3935, "lng": 126.6440, "rating": 4.8, "conquered": false, "reviews": [] },
+  { "id": "r09", "name": "연수 떡볶이 성지",  "category": "분식",   "emoji": "🌶️", "district": "연수구",   "address": "인천 연수구 함박뫼로 77", "lat": 37.4090, "lng": 126.6780, "rating": 4.0, "conquered": false, "reviews": [] },
+  { "id": "r10", "name": "부평 지하상가 왕만두", "category": "분식", "emoji": "🥟", "district": "부평구", "address": "인천 부평구 부평문화로 3", "lat": 37.4930, "lng": 126.7230, "rating": 4.4, "conquered": false, "reviews": [] },
+  { "id": "r11", "name": "부평 화덕피자",     "category": "양식",   "emoji": "🍕", "district": "부평구",   "address": "인천 부평구 시장로 15", "lat": 37.4975, "lng": 126.7250, "rating": 4.6, "conquered": false, "reviews": [] },
+  { "id": "r12", "name": "계양산 손두부",     "category": "한식",   "emoji": "🍲", "district": "계양구",   "address": "인천 계양구 장제로 800", "lat": 37.5450, "lng": 126.7380, "rating": 4.5, "conquered": false, "reviews": [] },
+  { "id": "r13", "name": "청라 브런치카페",   "category": "카페",   "emoji": "☕", "district": "서구",     "address": "인천 서구 청라커낼로 200", "lat": 37.5340, "lng": 126.6480, "rating": 4.2, "conquered": false, "reviews": [] },
+  { "id": "r14", "name": "검단 뼈해장국",     "category": "한식",   "emoji": "🍖", "district": "서구",     "address": "인천 서구 완정로 45", "lat": 37.5980, "lng": 126.6700, "rating": 4.3, "conquered": false, "reviews": [] },
+  { "id": "r15", "name": "주안 옛날돈까스",   "category": "양식",   "emoji": "🍱", "district": "미추홀구", "address": "인천 미추홀구 주안로 30", "lat": 37.4650, "lng": 126.6800, "rating": 4.1, "conquered": false, "reviews": [] },
+  { "id": "r16", "name": "인하대 앞 김밥천하", "category": "분식",  "emoji": "🍙", "district": "미추홀구", "address": "인천 미추홀구 인하로 100", "lat": 37.4500, "lng": 126.6540, "rating": 3.9, "conquered": false, "reviews": [] }
+]

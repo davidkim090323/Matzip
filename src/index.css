@@ -1,0 +1,265 @@
+@import 'tailwindcss';
+
+:root {
+  --ink: #1b1230;
+  --panel: #1e163a;
+  --panel-2: #241a45;
+  --line: #4c3f7a;
+  --gold: #fbbf24;
+}
+
+* {
+  -webkit-tap-highlight-color: transparent;
+  /* iOS 에서 100vh 가 주소창 높이를 포함해 잘리는 문제 → 동적 뷰포트 단위 사용 */
+  -webkit-text-size-adjust: 100%;
+}
+
+html { height: 100%; }
+
+/* 버튼/입력은 손가락으로 누를 수 있는 최소 크기(44px 권장)를 확보 */
+button,
+input[type='checkbox'] {
+  touch-action: manipulation;
+}
+button:not(.no-min) {
+  min-height: 32px;
+}
+input:not([type='checkbox']),
+textarea {
+  font-size: 16px; /* 16px 미만이면 iOS 가 포커스 시 화면을 확대해버린다 */
+  min-height: 44px;
+}
+
+/* 전부 Pretendard. 도트 폰트는 한글 가독성이 나빠서 걷어냄 */
+body {
+  font-family: 'Pretendard Variable', Pretendard, -apple-system, 'Malgun Gothic', sans-serif;
+  font-size: 15px;
+  font-weight: 500;
+  line-height: 1.6;
+  letter-spacing: -0.015em;
+  background:
+    radial-gradient(circle at 15% -5%, #33265e 0%, transparent 45%),
+    radial-gradient(circle at 85% 105%, #12405a 0%, transparent 45%),
+    #100c1f;
+  background-attachment: fixed;
+  color: #f1f5f9;
+  overflow-x: hidden;
+}
+
+/* 예전 도트 폰트 클래스는 굵은 라벨로 대체(마크업 수정 없이 의미만 바꿈) */
+.font-pixel {
+  font-weight: 700;
+  letter-spacing: -0.01em;
+}
+
+/* 위계는 폰트 대신 굵기/자간으로 준다 */
+h1 { font-weight: 800; font-size: 1.15rem; }
+h2 { font-weight: 700; }
+h1, h2, h3 { letter-spacing: -0.03em; }
+
+.pixel-btn { font-weight: 700; }
+
+/* 타이머·거리 등 숫자는 폭이 흔들리지 않게 */
+.tabular { font-variant-numeric: tabular-nums; font-weight: 700; }
+
+/* 본문 대비 확보 */
+.text-body { color: #e2e8f0; }
+.text-muted { color: #a3aec2; }
+
+/* CRT 스캔라인 — 고해상도 모바일에선 텍스트를 갉아먹어서 아주 옅게만 */
+body::after {
+  content: '';
+  position: fixed;
+  inset: 0;
+  pointer-events: none;
+  z-index: 100;
+  background: repeating-linear-gradient(
+    0deg,
+    rgba(0, 0, 0, 0.07) 0px,
+    rgba(0, 0, 0, 0.07) 1px,
+    transparent 1px,
+    transparent 4px
+  );
+  mix-blend-mode: multiply;
+}
+@media (max-width: 480px) {
+  body::after { opacity: 0.5; }
+}
+
+/* ── 패널 / 버튼 ───────────────────────────────────────── */
+.pixel-panel {
+  background: linear-gradient(180deg, rgba(43, 32, 80, 0.95), rgba(30, 22, 58, 0.95));
+  border: 3px solid var(--line);
+  box-shadow: inset 0 2px 0 0 rgba(255, 255, 255, 0.06), inset 0 0 0 3px #241a45,
+    0 6px 0 0 rgba(0, 0, 0, 0.5);
+}
+
+.pixel-btn {
+  border: 3px solid var(--ink);
+  box-shadow: 0 4px 0 0 var(--ink);
+  transition: transform 0.07s ease-out, box-shadow 0.07s ease-out, filter 0.15s;
+  position: relative;
+  overflow: hidden;
+}
+.pixel-btn:hover:not(:disabled) { filter: brightness(1.12); }
+.pixel-btn:active:not(:disabled) {
+  transform: translateY(4px);
+  box-shadow: 0 0 0 0 var(--ink);
+}
+.pixel-btn:disabled { opacity: 0.4; cursor: not-allowed; }
+
+/* 버튼 위를 훑고 지나가는 광택 */
+.pixel-btn::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: -60%;
+  width: 40%;
+  height: 100%;
+  background: linear-gradient(100deg, transparent, rgba(255, 255, 255, 0.45), transparent);
+  transform: skewX(-20deg);
+  transition: left 0.5s ease;
+}
+.pixel-btn:hover:not(:disabled)::before { left: 130%; }
+
+/* 카드 hover — 살짝 떠오름 */
+.lift {
+  transition: transform 0.14s ease-out, box-shadow 0.14s ease-out;
+}
+.lift:hover {
+  transform: translateY(-3px);
+  box-shadow: 0 10px 0 -2px rgba(0, 0, 0, 0.5), 0 0 22px -6px var(--gold);
+}
+.lift:active { transform: translateY(0); }
+
+/* ── 애니메이션 ────────────────────────────────────────── */
+@keyframes bob {
+  0%, 100% { transform: translateY(0); }
+  50% { transform: translateY(-5px); }
+}
+.bob { animation: bob 1.6s ease-in-out infinite; }
+
+@keyframes ping-marker {
+  0% { transform: scale(1); opacity: 0.75; }
+  100% { transform: scale(2.6); opacity: 0; }
+}
+.marker-ping { animation: ping-marker 1.8s ease-out infinite; }
+
+@keyframes pop-in {
+  0% { transform: scale(0.7) translateY(12px); opacity: 0; }
+  60% { transform: scale(1.04) translateY(-2px); opacity: 1; }
+  100% { transform: scale(1) translateY(0); }
+}
+.pop-in { animation: pop-in 0.28s cubic-bezier(0.2, 1.4, 0.5, 1) both; }
+
+@keyframes fade-in {
+  from { opacity: 0; }
+  to { opacity: 1; }
+}
+.fade-in { animation: fade-in 0.2s ease-out both; }
+
+@keyframes slide-down {
+  from { transform: translateY(-140%); opacity: 0; }
+  to { transform: translateY(0); opacity: 1; }
+}
+.slide-down { animation: slide-down 0.32s cubic-bezier(0.2, 1.3, 0.4, 1) both; }
+
+/* 페이지 진입 — 라우트가 바뀔 때마다 아래에서 살짝 올라옴 */
+@keyframes page-in {
+  from { opacity: 0; transform: translateY(10px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+.page-in { animation: page-in 0.24s ease-out both; }
+
+/* 목록 항목 스태거 — style="--i: n" 으로 지연을 준다 */
+.stagger { animation: page-in 0.3s ease-out both; animation-delay: calc(var(--i, 0) * 45ms); }
+
+/* 뽑기 상자 흔들기 */
+@keyframes shake {
+  0%, 100% { transform: rotate(0) scale(1); }
+  20% { transform: rotate(-9deg) scale(1.05); }
+  40% { transform: rotate(9deg) scale(1.05); }
+  60% { transform: rotate(-6deg) scale(1.08); }
+  80% { transform: rotate(6deg) scale(1.08); }
+}
+.shake { animation: shake 0.42s ease-in-out infinite; }
+
+/* 뽑기 결과 등장 */
+@keyframes reveal {
+  0% { transform: scale(0.2) rotate(-18deg); opacity: 0; }
+  55% { transform: scale(1.22) rotate(4deg); opacity: 1; }
+  75% { transform: scale(0.94) rotate(-2deg); }
+  100% { transform: scale(1) rotate(0); }
+}
+.reveal { animation: reveal 0.6s cubic-bezier(0.2, 1.3, 0.4, 1) both; }
+
+/* 희귀도 후광 */
+@keyframes halo {
+  0%, 100% { opacity: 0.35; transform: scale(1) rotate(0deg); }
+  50% { opacity: 0.75; transform: scale(1.12) rotate(180deg); }
+}
+.halo { animation: halo 2.4s ease-in-out infinite; }
+
+/* 레벨업/해금 강조 */
+@keyframes flash {
+  0%, 100% { filter: brightness(1); }
+  50% { filter: brightness(1.9); }
+}
+.flash { animation: flash 0.45s ease-in-out 3; }
+
+/* 진행바 위로 흐르는 빛 */
+@keyframes shimmer {
+  from { background-position: -200% 0; }
+  to { background-position: 200% 0; }
+}
+.shimmer {
+  background-image: linear-gradient(
+    100deg,
+    transparent 20%,
+    rgba(255, 255, 255, 0.45) 50%,
+    transparent 80%
+  );
+  background-size: 200% 100%;
+  animation: shimmer 1.9s linear infinite;
+}
+
+@keyframes slide-up {
+  from { transform: translateY(100%); opacity: 0; }
+  to { transform: translateY(0); opacity: 1; }
+}
+.slide-up { animation: slide-up 0.26s cubic-bezier(0.2, 1.2, 0.4, 1) both; }
+
+/* 네비게이션 경로선 — 점선이 목적지 방향으로 흐른다 */
+@keyframes dash-flow {
+  to { stroke-dashoffset: -28px; }
+}
+.route-dash { animation: dash-flow 0.9s linear infinite; }
+
+/* 다음 웨이포인트 강조 */
+@keyframes wp-pulse {
+  0%, 100% { r: 5; opacity: 1; }
+  50% { r: 8; opacity: 0.55; }
+}
+.wp-next { animation: wp-pulse 1.1s ease-in-out infinite; }
+
+/* 지도 위 등장 마커 */
+@keyframes drop-in {
+  0% { transform: translate(-50%, -180%); opacity: 0; }
+  70% { transform: translate(-50%, -95%); opacity: 1; }
+  100% { transform: translate(-50%, -100%); }
+}
+.drop-in { animation: drop-in 0.35s ease-out both; }
+
+/* 접근성: 모션 최소화 설정을 존중 */
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+  }
+}
+
+/* 스크롤바 */
+::-webkit-scrollbar { width: 8px; height: 8px; }
+::-webkit-scrollbar-track { background: #1b1230; }
+::-webkit-scrollbar-thumb { background: var(--line); border: 2px solid #1b1230; }

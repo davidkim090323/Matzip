@@ -1,0 +1,16 @@
+{
+  "nickname": "먹깨비",
+  "level": 3,
+  "exp": 120,
+  "ownedTitleIds": ["t_newbie", "t_wanderer"],
+  "equippedTitleId": "t_wanderer",
+  "ownedMatmonIds": ["m_bap", "m_kimchi"],
+  "equippedMatmonIds": ["m_bap"],
+  "ownedCostumeIds": [],
+  "gachaTickets": 3,
+  "costume": {
+    "hat": "h_none",
+    "color": "c_blue",
+    "accessory": "a_none"
+  }
+}
