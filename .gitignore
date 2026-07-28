@@ -4,3 +4,6 @@ dist/
 *.local
 .env
 .env.*
+
+# firebase 배포 캐시
+.firebase/

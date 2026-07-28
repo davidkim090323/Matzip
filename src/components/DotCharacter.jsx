@@ -3,6 +3,8 @@ import {
   BODY,
   HATS,
   ACCESSORIES,
+  ACC_BACK,
+  AURAS,
   MATMON_SPRITES,
   FOOD_SPRITES,
   FLAG_TODO,
@@ -25,32 +27,60 @@ function Layer({ rows, palette }) {
  * 플레이어 캐릭터. 본체 + 모자 + 악세서리를 같은 16x16 좌표계에 겹쳐 그린다.
  * 이모지 오버레이를 전부 제거 → 전 부위가 진짜 도트.
  */
+/** 캐릭터 뒤에 그리는 아우라(효과). CSS 애니메이션. 자체적으로 크기·위치를 갖는다. */
+export const DotAura = memo(function DotAura({ id, size = 96, className = '' }) {
+  const aura = AURAS[id];
+  if (!aura || aura.style === 'none') return null;
+  return (
+    <span
+      className={`relative inline-block ${className}`}
+      style={{ width: size, height: size }}
+      aria-hidden
+    >
+      <span className={`aura aura-${aura.style}`} style={{ '--aura': aura.color }} />
+    </span>
+  );
+});
+
 export const DotCharacter = memo(function DotCharacter({
   color = '#3b82f6',
   hatId,
   accessoryId,
+  auraId,
   size = 96,
   className = '',
 }) {
-  const bodyPalette = { 1: color, 2: shade(color, -50), 3: '#ffd9b3', 4: '#1b1230' };
+  const bodyPalette = { 1: color, 2: shade(color, -50), 3: '#ffd9b3', 4: '#4a3324' };
   const hat = HATS[hatId];
   const acc = ACCESSORIES[accessoryId];
+  const aura = AURAS[auraId];
+  const hasAura = aura && aura.style !== 'none';
 
-  return (
+  const svg = (
     <svg
       width={size}
       height={size}
       viewBox="0 0 16 16"
       shapeRendering="crispEdges"
-      className={className}
+      className={hasAura ? 'relative' : className}
       style={{ imageRendering: 'pixelated' }}
     >
-      {/* 악세서리 중 몸 뒤에 오는 것(망토·날개)은 본체보다 먼저 */}
-      {acc && ['a_cape', 'a_wings'].includes(accessoryId) && <Layer rows={acc.rows} palette={acc.palette} />}
+      {/* 몸 뒤에 오는 악세서리(망토·날개)는 본체보다 먼저 */}
+      {acc && ACC_BACK[accessoryId] && <Layer rows={acc.rows} palette={acc.palette} />}
       <Layer rows={BODY} palette={bodyPalette} />
-      {acc && !['a_cape', 'a_wings'].includes(accessoryId) && <Layer rows={acc.rows} palette={acc.palette} />}
+      {acc && !ACC_BACK[accessoryId] && <Layer rows={acc.rows} palette={acc.palette} />}
       {hat && <Layer rows={hat.rows} palette={hat.palette} />}
     </svg>
+  );
+
+  if (!hasAura) return svg;
+  return (
+    <span className={`relative inline-grid place-items-center ${className}`} style={{ width: size, height: size }}>
+      <span className="absolute inset-0 grid place-items-center">
+        <DotAura id={auraId} size={size} />
+      </span>
+      {svg}
+    </span>
   );
 });
 
@@ -94,6 +124,15 @@ function bbox(rows) {
 
 /** 커스터마이징 아이템 아이콘(모자/악세서리) — 아이템 영역만 잘라서 크게 보여준다 */
 export const DotItem = memo(function DotItem({ slot, id, size = 40, className = '' }) {
+  if (slot === 'aura') {
+    const aura = AURAS[id];
+    if (!aura || aura.style === 'none') return <span className={className} style={{ fontSize: size * 0.6 }}>🚫</span>;
+    return (
+      <span className={`grid place-items-center ${className}`} style={{ width: size, height: size }}>
+        <DotAura id={id} size={size * 0.9} />
+      </span>
+    );
+  }
   const src = slot === 'hat' ? HATS[id] : ACCESSORIES[id];
   if (!src) return <span className={className} style={{ fontSize: size * 0.6 }}>🚫</span>;
   const b = bbox(src.rows);

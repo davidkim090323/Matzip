@@ -1,13 +1,13 @@
 {
   "name": "맛집공략",
   "short_name": "맛집공략",
-  "description": "인천 맛집을 직접 방문해 공략하는 위치 기반 게이미피케이션 앱",
+  "description": "춘천 맛집을 직접 방문해 공략하는 위치 기반 게이미피케이션 앱",
   "start_url": "/",
   "scope": "/",
   "display": "standalone",
   "orientation": "portrait",
-  "background_color": "#100c1f",
-  "theme_color": "#1e163a",
+  "background_color": "#fdf4e7",
+  "theme_color": "#fdf4e7",
   "lang": "ko",
   "categories": ["food", "games", "lifestyle"],
   "icons": [

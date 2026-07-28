@@ -1,0 +1,74 @@
+{
+  "rules": {
+    "users": {
+      "$uid": {
+        ".read": "auth != null && auth.uid === $uid",
+        ".write": "auth != null && auth.uid === $uid"
+      }
+    },
+    "leaderboard": {
+      ".read": "auth != null",
+      "$uid": {
+        ".write": "auth != null && auth.uid === $uid",
+        ".validate": "newData.hasChildren(['nickname'])"
+      }
+    },
+    "reviews": {
+      ".read": "auth != null",
+      "$rid": {
+        "$rvid": {
+          ".write": "auth != null",
+          ".validate": "!newData.exists() || (newData.hasChildren(['uid']) && (data.exists() ? newData.child('uid').val() === data.child('uid').val() : newData.child('uid').val() === auth.uid))"
+        }
+      }
+    },
+    "posts": {
+      ".read": "auth != null",
+      "$pid": {
+        ".write": "auth != null",
+        ".validate": "!newData.exists() || (newData.hasChildren(['uid']) && (data.exists() ? newData.child('uid').val() === data.child('uid').val() : newData.child('uid').val() === auth.uid))"
+      }
+    },
+    "restaurants": {
+      ".read": "auth != null",
+      ".write": "auth != null && auth.token.email === 'davidkim090323@gmail.com'"
+    },
+    "restaurantRequests": {
+      ".read": "auth != null",
+      "$reqId": {
+        ".write": "auth != null && ((!data.exists() && newData.child('uid').val() === auth.uid) || auth.token.email === 'davidkim090323@gmail.com')",
+        ".validate": "!newData.exists() || newData.hasChildren(['uid', 'name'])"
+      }
+    },
+    "guilds": {
+      ".read": "auth != null",
+      "$gid": {
+        ".write": "auth != null && (!data.exists() || data.child('leaderUid').val() === auth.uid)",
+        ".validate": "!newData.exists() || newData.hasChildren(['name', 'leaderUid'])",
+        "members": {
+          "$uid": {
+            ".write": "auth != null && ($uid === auth.uid || data.parent().parent().child('leaderUid').val() === auth.uid)"
+          }
+        }
+      }
+    },
+    "raids": {
+      ".read": "auth != null",
+      "$rid": {
+        ".write": "auth != null && (!data.exists() ? newData.child('hostUid').val() === auth.uid : data.child('hostUid').val() === auth.uid)",
+        ".validate": "!newData.exists() || newData.hasChildren(['hostUid', 'restaurantId'])",
+        "members": {
+          "$uid": {
+            ".write": "auth != null && $uid === auth.uid"
+          }
+        }
+      }
+    },
+    "territory": {
+      ".read": "auth != null",
+      "$restId": {
+        ".write": "auth != null"
+      }
+    }
+  }
+}

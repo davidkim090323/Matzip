@@ -4,5 +4,16 @@
   { "id": "t_pioneer",  "name": "동네 탐험가",   "requiredConquests": 5,  "desc": "맛집 5곳 공략", "color": "#38bdf8" },
   { "id": "t_hunter",   "name": "맛집 헌터",     "requiredConquests": 10, "desc": "맛집 10곳 공략", "color": "#a78bfa" },
   { "id": "t_gourmet",  "name": "미식가",        "requiredConquests": 20, "desc": "맛집 20곳 공략", "color": "#f59e0b" },
-  { "id": "t_conqueror","name": "인천 정복자",   "requiredConquests": 30, "desc": "맛집 30곳 공략", "color": "#ef4444" }
+  { "id": "t_conqueror","name": "춘천 정복자",   "requiredConquests": 30, "desc": "맛집 30곳 공략", "color": "#ef4444" },
+
+  { "id": "t_shop_foodie",   "name": "푸디",         "shop": true, "price": 600,  "desc": "상점 한정 칭호", "color": "#f472b6" },
+  { "id": "t_shop_gourmand", "name": "대식가",       "shop": true, "price": 900,  "desc": "상점 한정 칭호", "color": "#fb923c" },
+  { "id": "t_shop_night",    "name": "야식대장",     "shop": true, "price": 1200, "desc": "상점 한정 칭호", "color": "#6366f1" },
+  { "id": "t_shop_spicy",    "name": "매운맛 장인",  "shop": true, "price": 1500, "desc": "상점 한정 칭호", "color": "#dc2626" },
+  { "id": "t_shop_sweet",    "name": "디저트홀릭",   "shop": true, "price": 1500, "desc": "상점 한정 칭호", "color": "#ec4899" },
+  { "id": "t_shop_local",    "name": "춘천 토박이",  "shop": true, "price": 1800, "desc": "상점 한정 칭호", "color": "#14b8a6" },
+  { "id": "t_shop_master",   "name": "공략법 마스터","shop": true, "price": 2400, "desc": "상점 한정 칭호", "color": "#0ea5e9" },
+  { "id": "t_shop_rich",     "name": "코인 부자",    "shop": true, "price": 3000, "desc": "상점 한정 칭호", "color": "#eab308" },
+  { "id": "t_shop_legend",   "name": "살아있는 전설","shop": true, "price": 4500, "desc": "상점 한정 칭호", "color": "#a855f7" },
+  { "id": "t_shop_vip",      "name": "VIP 미식가",   "shop": true, "price": 6000, "desc": "상점 한정 칭호", "color": "#f43f5e" }
 ]

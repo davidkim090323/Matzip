@@ -22,8 +22,8 @@ export default function Toast() {
       >
         <span className="text-2xl shrink-0">{toast.icon ?? '✨'}</span>
         <div className="min-w-0 flex-1">
-          <p className="text-sm text-amber-300 truncate">{toast.title}</p>
-          {toast.body && <p className="text-[13px] text-slate-300 mt-0.5">{toast.body}</p>}
+          <p className="text-sm text-[#b45309] truncate">{toast.title}</p>
+          {toast.body && <p className="text-[13.5px] text-[#5d4a35] mt-0.5">{toast.body}</p>}
         </div>
       </button>
       {/* 남은 시간 게이지 */}

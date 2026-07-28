@@ -21,7 +21,7 @@ export default function LevelUpModal() {
   return (
     <div className="fixed inset-0 z-[70] bg-black/85 grid place-items-center fade-in p-4" onClick={clear}>
       <div
-        className="relative w-full max-w-[340px] pixel-panel p-6 text-center pop-in border-amber-300"
+        className="relative w-full max-w-[340px] pixel-panel p-6 text-center pop-in border-amber-500"
         onClick={(e) => e.stopPropagation()}
       >
         {/* 회전하는 광선 */}
@@ -36,10 +36,10 @@ export default function LevelUpModal() {
 
         {levelUp.levelUps > 0 && (
           <>
-            <p className="text-[13px] text-slate-300">{levelUp.from} 에서</p>
-            <p className="text-3xl text-amber-300 font-extrabold mt-1 flash">LEVEL UP!</p>
+            <p className="text-[13.5px] text-[#5d4a35]">{levelUp.from} 에서</p>
+            <p className="text-3xl text-[#b45309] font-extrabold mt-1 flash">LEVEL UP!</p>
             <p className="text-lg mt-1">
-              Lv.{levelUp.level - levelUp.levelUps} → <span className="text-amber-300">Lv.{levelUp.level}</span>
+              Lv.{levelUp.level - levelUp.levelUps} → <span className="text-[#b45309]">Lv.{levelUp.level}</span>
             </p>
           </>
         )}
@@ -49,6 +49,7 @@ export default function LevelUpModal() {
             color={color}
             hatId={user.costume.hat}
             accessoryId={user.costume.accessory}
+            auraId={user.costume.aura}
             size={120}
             className="bob"
           />
@@ -56,7 +57,7 @@ export default function LevelUpModal() {
 
         {levelUp.unlocked?.length > 0 && (
           <div className="space-y-2">
-            <p className="text-sm text-amber-300">🏅 새 칭호 해금!</p>
+            <p className="text-sm text-[#b45309]">🏅 새 칭호 해금!</p>
             {levelUp.unlocked.map((t) => (
               <button
                 key={t.id}
@@ -64,7 +65,7 @@ export default function LevelUpModal() {
                   equipTitle(t.id);
                   clear();
                 }}
-                className="w-full pixel-btn py-2 text-sm text-[#1b1230]"
+                className="w-full pixel-btn py-2 text-sm text-[#4a3324]"
                 style={{ background: t.color }}
               >
                 {t.name} — 바로 착용하기
@@ -75,7 +76,7 @@ export default function LevelUpModal() {
 
         <button
           onClick={clear}
-          className="mt-4 w-full pixel-btn bg-amber-300 text-[#1b1230] py-2.5 text-sm"
+          className="mt-4 w-full pixel-btn bg-amber-300 text-[#4a3324] py-2.5 text-sm"
         >
           계속하기
         </button>

@@ -1,8 +1,8 @@
 import { useState, useEffect, useRef, useCallback } from 'react';
 import { useGame } from '../store/gameStore';
 
-// 개발용 시작 좌표(인천 구월동 근처). 실제 브라우저 GPS를 못 쓰면 여기서 출발한다.
-export const MOCK_ORIGIN = { lat: 37.4487, lng: 126.7015 };
+// 개발용 시작 좌표(춘천 명동 근처). 실제 브라우저 GPS를 못 쓰면 여기서 출발한다.
+export const MOCK_ORIGIN = { lat: 37.8776, lng: 127.7276 };
 
 /** 하버사인 거리(m) */
 export function distanceMeters(a, b) {

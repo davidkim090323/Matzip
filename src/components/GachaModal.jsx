@@ -1,4 +1,5 @@
 import { useEffect, useState } from 'react';
+import { createPortal } from 'react-dom';
 import { RARITY } from '../store/gameStore';
 import { DotMatmon, DotItem, DotCharacter } from './DotCharacter';
 import { useModal } from '../hooks/useModal';
@@ -28,8 +29,8 @@ export default function GachaModal({ result, onClose }) {
           <p className="text-sm">
             {result.kind === 'matmon' ? '맛몬' : '아이템'}을 전부 모았습니다!
           </p>
-          <p className="text-[13px] text-slate-400 mt-1">뽑기권은 소모되지 않았습니다.</p>
-          <button onClick={onClose} className="mt-4 pixel-btn bg-[#2b2050] px-6 py-2 text-sm">
+          <p className="text-[13.5px] text-[#7d6549] mt-1">뽑기권은 소모되지 않았습니다.</p>
+          <button onClick={onClose} className="mt-4 pixel-btn bg-[#f1e3cf] px-6 py-2 text-sm">
             닫기
           </button>
         </div>
@@ -59,7 +60,7 @@ export default function GachaModal({ result, onClose }) {
           {phase === 'shaking' ? (
             <>
               <div className="text-6xl shake inline-block">🎁</div>
-              <p className="mt-4 text-sm text-amber-300 animate-pulse">두근두근...</p>
+              <p className="mt-4 text-sm text-[#b45309] animate-pulse">두근두근...</p>
             </>
           ) : (
             <>
@@ -68,19 +69,25 @@ export default function GachaModal({ result, onClose }) {
               </div>
 
               <p
-                className="mt-3 inline-block px-3 py-0.5 text-[13px] border-2 border-[#1b1230] text-[#1b1230]"
+                className="mt-3 inline-block px-3 py-0.5 text-[13.5px] border-2 border-[#4a3324] text-[#4a3324]"
                 style={{ background: rarity.color }}
               >
                 {rarity.label}
               </p>
-              <p className={`mt-2 text-base ${isBig ? 'flash text-amber-300' : ''}`}>{item.name}</p>
-              <p className="text-[13px] text-slate-400 mt-1 min-h-[1.2em]">
+              <p className={`mt-2 text-base ${isBig ? 'flash text-[#b45309]' : ''}`}>{item.name}</p>
+              <p className="text-[13.5px] text-[#7d6549] mt-1 min-h-[1.2em]">
                 {item.desc ?? slotLabel(item.slot)}
               </p>
+              {result.count > 1 && (
+                <p className="text-[12.5px] text-[#b45309] mt-0.5">보유 {result.count}개 (중복)</p>
+              )}
+              {result.rarityOut && (
+                <p className="text-[12.5px] text-[#b45309] mt-0.5">조합 성공! {result.craftedFrom} 3개 → {result.rarityOut}</p>
+              )}
 
               <button
                 onClick={onClose}
-                className="mt-5 w-full pixel-btn bg-amber-300 text-[#1b1230] py-2.5 text-sm"
+                className="mt-5 w-full pixel-btn bg-amber-300 text-[#4a3324] py-2.5 text-sm"
               >
                 획득!
               </button>
@@ -103,8 +110,10 @@ function Preview({ result, item }) {
   return <DotItem slot={item.slot} id={item.id} size={128} />;
 }
 
+// body 로 포탈. 페이지 컨테이너의 transform(page-in 애니 잔여) 때문에 fixed 가
+// 뷰포트가 아닌 페이지 기준으로 잡혀 모바일에서 모달이 화면 밖으로 밀리던 문제를 없앤다.
 function Backdrop({ children, onClose }) {
-  return (
+  return createPortal(
     <div
       className="fixed inset-0 z-50 bg-black/80 grid place-items-center fade-in"
       onClick={onClose}
@@ -112,6 +121,7 @@ function Backdrop({ children, onClose }) {
       <div onClick={(e) => e.stopPropagation()} className="w-full grid place-items-center">
         {children}
       </div>
-    </div>
+    </div>,
+    document.body
   );
 }

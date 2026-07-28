@@ -45,25 +45,25 @@ export default function InstallPrompt() {
   };
 
   return (
-    <div className="pixel-panel p-3 flex items-center gap-3 border-amber-300 pop-in">
+    <div className="pixel-panel p-3 flex items-center gap-3 border-amber-500 pop-in">
       <span className="text-2xl shrink-0">📲</span>
       <div className="flex-1 min-w-0">
-        <p className="text-[13px]">앱으로 설치하고 홈 화면에서 바로 실행</p>
+        <p className="text-[13.5px]">앱으로 설치하고 홈 화면에서 바로 실행</p>
         {showIosHint ? (
-          <p className="text-[11.5px] text-amber-300 mt-0.5">
-            Safari 하단 공유 <span className="mx-0.5">􀈂</span> → "홈 화면에 추가"를 누르세요
+          <p className="text-[12.5px] text-[#b45309] mt-0.5">
+            Safari 하단 공유 버튼(⬆️) → "홈 화면에 추가"를 누르세요
           </p>
         ) : (
-          <p className="text-[11.5px] text-slate-400 mt-0.5">오프라인에서도 열립니다</p>
+          <p className="text-[12.5px] text-[#7d6549] mt-0.5">오프라인에서도 열립니다</p>
         )}
       </div>
       <button
         onClick={install}
-        className="pixel-btn bg-amber-300 text-[#1b1230] px-3 py-2 text-[13px] shrink-0"
+        className="pixel-btn bg-amber-300 text-[#4a3324] px-3 py-2 text-[13.5px] shrink-0"
       >
         설치
       </button>
-      <button onClick={dismiss} className="text-slate-600 hover:text-slate-400 px-1 shrink-0">
+      <button onClick={dismiss} className="text-[#b89f7c] hover:text-[#7d6549] px-1 shrink-0">
         ✕
       </button>
     </div>

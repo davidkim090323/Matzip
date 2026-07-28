@@ -19,8 +19,10 @@ export function useModal(open, onClose) {
     const scrollY = window.scrollY;
     document.body.style.overflow = 'hidden';
 
-    // 뒤로가기로 모달만 닫기
-    window.history.pushState({ modal: true }, '');
+    // 뒤로가기로 모달만 닫기.
+    // react-router 가 history.state 에 자기 인덱스(idx/key)를 보관하므로
+    // 통째로 덮지 말고 기존 state 를 유지한 채 modal 플래그만 얹는다.
+    window.history.pushState({ ...window.history.state, modal: true }, '');
     const onPop = () => onClose?.();
     window.addEventListener('popstate', onPop);
 

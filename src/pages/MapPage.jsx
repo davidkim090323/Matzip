@@ -1,6 +1,8 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
+import { createPortal } from 'react-dom';
 import { useNavigate, useSearchParams } from 'react-router-dom';
 import { useGame, CONQUEST_MINUTES, CONQUEST_RADIUS_M, ratingOf } from '../store/gameStore';
+import PublicRaidPanel from '../components/PublicRaidPanel';
 import {
   useGeolocation,
   distanceMeters,
@@ -8,17 +10,22 @@ import {
   buildRoute,
   stepToward,
 } from '../hooks/useGeolocation';
-import { DotCharacter, DotMatmon, DotFood, DotFlag } from '../components/DotCharacter';
+import { DotFood } from '../components/DotCharacter';
+import KakaoMap from '../components/KakaoMap';
 import { useModal } from '../hooks/useModal';
+import { sendNotify } from '../lib/notify';
 
-const BASE_SCALE = 22000; // 위경도 1도 → px (zoom 1 기준). 약 1px ≈ 5m
-const VIEW_H = 480;
-const PADDING = 700; // 지도 가장자리 여백(px)
-const ZOOMS = [0.5, 0.75, 1, 1.5];
+const NEARBY_NOTIFY_M = 250; // 찜 맛집 근처 알림 반경(미터)
 
 export default function MapPage() {
+  // 지도 높이 — 작은 폰(SE 등)에서 화면을 다 삼키지 않게 화면 높이에 비례시킨다
+  const VIEW_H = useMemo(
+    () => Math.round(Math.max(420, Math.min(640, window.innerHeight * 0.64))),
+    []
+  );
   const navigate = useNavigate();
   const restaurants = useGame((s) => s.restaurants);
+  const territoryByRest = useGame((s) => s.territoryByRest);
   const costumes = useGame((s) => s.costumes);
   const user = useGame((s) => s.user);
   const pets = useGame((s) => s.equippedMatmon());
@@ -30,8 +37,6 @@ export default function MapPage() {
   const [mode, setMode] = useState('mock');
   const { pos, error, nudge, teleport, isMock } = useGeolocation(mode);
 
-  const [zoom, setZoom] = useState(1);
-  const [cam, setCam] = useState({ x: 0, y: 0 }); // 뷰포트 좌상단의 월드 좌표
   const [follow, setFollow] = useState(true); // 캐릭터 자동 추적 (드래그하면 해제)
   const [selectedId, setSelectedId] = useState(null);
   const [devOpen, setDevOpen] = useState(false); // 개발자 도구 접힘
@@ -59,45 +64,8 @@ export default function MapPage() {
   const walking = useGame((s) => s.walking);
   const setWalking = useGame((s) => s.setWalking);
 
-  const viewportRef = useRef(null);
-  const dragRef = useRef(null);
-  const timerRef = useRef(null);
   const posRef = useRef(pos);
   posRef.current = pos;
-
-  const scale = BASE_SCALE * zoom;
-
-  // ── 월드 좌표계 ────────────────────────────────────────────
-  // 전체 맛집을 감싸는 경계 상자를 만들고, 그 안에서 절대 픽셀 좌표를 쓴다.
-  // (예전엔 캐릭터를 항상 화면 중앙에 고정했지만, 이제 지도를 자유롭게 끌 수 있어야 하므로
-  //  "월드는 고정, 카메라가 움직인다" 구조로 바꿨다.)
-  const bounds = useMemo(() => {
-    const lats = restaurants.map((r) => r.lat);
-    const lngs = restaurants.map((r) => r.lng);
-    return {
-      minLat: Math.min(...lats),
-      maxLat: Math.max(...lats),
-      minLng: Math.min(...lngs),
-      maxLng: Math.max(...lngs),
-    };
-  }, [restaurants]);
-
-  const cosLat = Math.cos(((bounds.minLat + bounds.maxLat) / 2) * (Math.PI / 180));
-
-  const toWorld = useCallback(
-    (lat, lng) => ({
-      x: (lng - bounds.minLng) * scale * cosLat + PADDING,
-      y: (bounds.maxLat - lat) * scale + PADDING,
-    }),
-    [bounds, scale, cosLat]
-  );
-
-  const world = {
-    w: (bounds.maxLng - bounds.minLng) * scale * cosLat + PADDING * 2,
-    h: (bounds.maxLat - bounds.minLat) * scale + PADDING * 2,
-  };
-
-  const me = toWorld(pos.lat, pos.lng);
 
   // 지도 필터 — 맛집이 많아지면 깃발이 뒤엉킨다. 카테고리/미공략/찜으로 걸러 본다.
   const [mapFilter, setMapFilter] = useState('전체'); // 전체 | 미공략 | 찜 | <카테고리>
@@ -119,86 +87,33 @@ export default function MapPage() {
         })
         .map((r) => ({
           ...r,
-          ...toWorld(r.lat, r.lng),
           dist: distanceMeters(pos, { lat: r.lat, lng: r.lng }),
           saved: bookmarkIds.includes(r.id),
         })),
-    [restaurants, toWorld, pos, mapFilter, bookmarkIds]
+    [restaurants, pos, mapFilter, bookmarkIds]
   );
 
   const nearby = useMemo(() => [...markers].sort((a, b) => a.dist - b.dist).slice(0, 3), [markers]);
 
-  /** 카메라를 월드 범위 안으로 가둔다 */
-  const clamp = useCallback(
-    (c) => {
-      const vw = viewportRef.current?.clientWidth ?? 400;
-      return {
-        x: Math.max(0, Math.min(world.w - vw, c.x)),
-        y: Math.max(0, Math.min(world.h - VIEW_H, c.y)),
-      };
-    },
-    [world.w, world.h]
-  );
-
-  const centerOnMe = useCallback(() => {
-    const vw = viewportRef.current?.clientWidth ?? 400;
-    setCam(clamp({ x: me.x - vw / 2, y: me.y - VIEW_H / 2 }));
-    setFollow(true);
-  }, [me.x, me.y, clamp]);
-
-  // 최초 진입 + follow 모드일 때 캐릭터 추적
+  // 찜한 미공략 맛집 반경에 들어오면 알림 — 맛집당 한 번만(세션 기준). 앱을 주머니에 넣고
+  // 걷다가 지나쳐도 놓치지 않게 한다. 이미 보고 있을 땐(포그라운드) 지도로 충분하므로 생략.
+  const notifiedNearRef = useRef(new Set());
   useEffect(() => {
-    if (!follow) return;
-    const vw = viewportRef.current?.clientWidth ?? 400;
-    setCam(clamp({ x: me.x - vw / 2, y: me.y - VIEW_H / 2 }));
-  }, [me.x, me.y, follow, clamp]);
-
-  // ── 드래그로 지도 이동 ──────────────────────────────────────
-  // 주의: 컨테이너에 setPointerCapture 를 걸면 안에 있는 버튼들의 click 이
-  // 캡처 요소로 리다이렉트되어 전부 먹통이 된다. 그래서 캡처 대신 window 리스너를 쓰고,
-  // 버튼 위에서 시작한 pointerdown 은 드래그로 치지 않는다.
-  const onPointerDown = (e) => {
-    if (e.target.closest('button')) return; // 버튼 클릭은 그대로 통과
-    dragRef.current = { px: e.clientX, py: e.clientY, cx: cam.x, cy: cam.y, moved: false };
-  };
-
-  useEffect(() => {
-    const onMove = (e) => {
-      const d = dragRef.current;
-      if (!d) return;
-      const dx = e.clientX - d.px;
-      const dy = e.clientY - d.py;
-      if (!d.moved && (Math.abs(dx) > 3 || Math.abs(dy) > 3)) {
-        d.moved = true;
-        setFollow(false); // 손으로 끌기 시작하면 자동 추적 해제
+    if (!document.hidden) return;
+    for (const m of markers) {
+      if (!m.saved || m.conquered) continue;
+      if (m.dist <= NEARBY_NOTIFY_M && !notifiedNearRef.current.has(m.id)) {
+        notifiedNearRef.current.add(m.id);
+        sendNotify('찜한 맛집이 근처예요 ⭐', {
+          body: `${m.name} · ${Math.round(m.dist)}m — 지금 공략하기 좋아요.`,
+          tag: `near-${m.id}`,
+        });
       }
-      if (d.moved) setCam(clamp({ x: d.cx - dx, y: d.cy - dy }));
-    };
-    const onUp = () => {
-      // 클릭 핸들러가 moved 를 읽은 뒤에 비우도록 한 틱 미룬다
-      setTimeout(() => { dragRef.current = null; }, 0);
-    };
-    window.addEventListener('pointermove', onMove);
-    window.addEventListener('pointerup', onUp);
-    window.addEventListener('pointercancel', onUp);
-    return () => {
-      window.removeEventListener('pointermove', onMove);
-      window.removeEventListener('pointerup', onUp);
-      window.removeEventListener('pointercancel', onUp);
-    };
-  }, [clamp]);
+    }
+  }, [markers]);
 
-  // 휠 = 세로 스크롤, shift+휠 = 가로 스크롤
-  const onWheel = (e) => {
-    setFollow(false);
-    setCam((c) =>
-      clamp(
-        e.shiftKey
-          ? { x: c.x + e.deltaY, y: c.y }
-          : { x: c.x + e.deltaX, y: c.y + e.deltaY }
-      )
-    );
-  };
+  // 내 위치로 카메라 복귀 — 카카오맵이 follow=true 일 때 캐릭터로 panTo 한다
+  const centerOnMe = useCallback(() => setFollow(true), []);
 
   // ── 네비게이션 ─────────────────────────────────────────────
   const WP_REACH_M = 20; // 웨이포인트 도달 판정 거리
@@ -313,8 +228,15 @@ export default function MapPage() {
       const result = conquer(visit.restaurantId);
       setSelectedId(null);
       if (result) {
-        const parts = [`EXP +${result.expGained}`, '🎟️ 뽑기권 +1'];
+        const parts = [`EXP +${result.expGained}`, '🎟️ +1', `🪙 +${result.coinsGained}`];
         pushToast({ icon: '🏆', title: `${target.name} 공략 완료!`, body: parts.join(' · ') });
+        // 타이머는 대개 앱을 벗어난 사이에 끝난다 → 백그라운드일 때만 OS 알림으로 알린다
+        if (document.hidden) {
+          sendNotify(`${target.name} 공략 완료! 🏆`, {
+            body: `${parts.join(' · ')} · 앱에서 확인하세요.`,
+            tag: 'conquest-done',
+          });
+        }
       }
       navigate(`/board/${visit.restaurantId}`); // 공략 완료 → 리뷰 작성 해금
     }
@@ -342,7 +264,6 @@ export default function MapPage() {
     ? distanceMeters(pos, { lat: selected.lat, lng: selected.lng })
     : 0;
   const canVisit = selected && selectedDist <= CONQUEST_RADIUS_M;
-  const radiusPx = (CONQUEST_RADIUS_M / 111_320) * scale;
 
   // Esc / 뒤로가기 / 배경 스크롤 잠금
   useModal(!!selected, () => setSelectedId(null));
@@ -353,21 +274,21 @@ export default function MapPage() {
       <div className="pixel-panel">
         <button
           onClick={() => setDevOpen((v) => !v)}
-          className="w-full flex items-center justify-between px-3 py-2 text-[13px]"
+          className="w-full flex items-center justify-between px-3 py-2 text-[13.5px]"
         >
-          <span className="text-slate-400">
+          <span className="text-[#7d6549]">
             🛠 개발자 도구{' '}
-            <span className="text-[11.5px] text-slate-600">
+            <span className="text-[12.5px] text-[#b89f7c]">
               ({mode === 'mock' ? '목업 GPS' : '실제 GPS'}
               {devFastTimer ? ' · 빠른 타이머' : ''})
             </span>
           </span>
-          <span className="text-slate-500">{devOpen ? '▲' : '▼'}</span>
+          <span className="text-[#96805f]">{devOpen ? '▲' : '▼'}</span>
         </button>
 
         {devOpen && (
-          <div className="px-3 pb-3 space-y-2 text-[13px]">
-            <p className="text-[11.5px] text-slate-500 leading-relaxed">
+          <div className="px-3 pb-3 space-y-2 text-[13.5px]">
+            <p className="text-[12.5px] text-[#96805f] leading-relaxed">
               워프·자동이동·빠른 타이머는 시연용입니다. 실서비스에서는 실제 GPS 이동과 30분
               체류로만 공략이 인정됩니다.
             </p>
@@ -376,8 +297,8 @@ export default function MapPage() {
                 <button
                   key={m}
                   onClick={() => setMode(m)}
-                  className={`px-2 py-1.5 border-2 border-[#1b1230] ${
-                    mode === m ? 'bg-amber-300 text-[#1b1230]' : 'bg-[#2b2050] text-slate-300'
+                  className={`px-2 py-1.5 border-2 border-[#4a3324] ${
+                    mode === m ? 'bg-amber-300 text-[#4a3324]' : 'bg-[#f1e3cf] text-[#5d4a35]'
                   }`}
                 >
                   {m === 'mock' ? '목업 GPS' : '실제 GPS'}
@@ -391,14 +312,14 @@ export default function MapPage() {
                 onChange={(e) => setDevFastTimer(e.target.checked)}
                 className="accent-amber-300 w-4 h-4"
               />
-              <span className="text-slate-300">빠른 타이머 (30분 → 10초)</span>
+              <span className="text-[#5d4a35]">빠른 타이머 (30분 → 10초)</span>
             </label>
           </div>
         )}
       </div>
 
       {error && (
-        <p className="text-[13px] text-red-300 px-1">
+        <p className="text-[13.5px] text-red-600 px-1">
           GPS 오류: {error} — 개발자 도구에서 목업 모드로 전환하세요.
         </p>
       )}
@@ -409,8 +330,8 @@ export default function MapPage() {
           <button
             key={c}
             onClick={() => setMapFilter(c)}
-            className={`px-2.5 py-1 text-[11.5px] border-2 border-[#1b1230] whitespace-nowrap transition-colors ${
-              mapFilter === c ? 'bg-sky-400 text-[#1b1230]' : 'bg-[#241a45] text-slate-400'
+            className={`px-2.5 py-1 text-[12.5px] border-2 border-[#4a3324] whitespace-nowrap transition-colors ${
+              mapFilter === c ? 'bg-sky-400 text-[#4a3324]' : 'bg-[#f7ecdd] text-[#7d6549]'
             }`}
           >
             {c === '찜' ? `⭐ 찜 ${bookmarkIds.length}` : c}
@@ -418,170 +339,23 @@ export default function MapPage() {
         ))}
       </div>
 
-      {/* 지도 뷰포트 — 드래그/휠로 자유 이동 */}
-      <div
-        ref={viewportRef}
-        onPointerDown={onPointerDown}
-        onWheel={onWheel}
-        className="pixel-panel relative overflow-hidden cursor-grab active:cursor-grabbing touch-none select-none"
-        style={{ height: VIEW_H }}
-      >
-        {/* 월드 레이어 — 카메라만큼 반대로 민다 */}
-        <div
-          className="absolute top-0 left-0"
-          style={{
-            width: world.w,
-            height: world.h,
-            transform: `translate3d(${-cam.x}px, ${-cam.y}px, 0)`,
-            background:
-              'repeating-linear-gradient(0deg,#2f4f3a 0 26px,#35583f 26px 52px), repeating-linear-gradient(90deg,rgba(0,0,0,0.07) 0 26px,transparent 26px 52px)',
-          }}
-        >
-          {/* 네비게이션 경로 — 현재 위치 → 남은 웨이포인트 → 목적지 */}
-          {route && (
-            <svg
-              className="absolute top-0 left-0 pointer-events-none"
-              width={world.w}
-              height={world.h}
-            >
-              {(() => {
-                const pts = [me, ...route.points.slice(route.idx).map((p) => toWorld(p.lat, p.lng))];
-                const d = pts.map((p) => `${p.x},${p.y}`).join(' ');
-                return (
-                  <>
-                    {/* 밑에 깔리는 굵은 길 */}
-                    <polyline
-                      points={d}
-                      fill="none"
-                      stroke="#1b1230"
-                      strokeWidth={9}
-                      strokeLinejoin="round"
-                      strokeLinecap="round"
-                    />
-                    {/* 흐르는 점선 */}
-                    <polyline
-                      points={d}
-                      fill="none"
-                      stroke="#fbbf24"
-                      strokeWidth={4}
-                      strokeDasharray="10 8"
-                      strokeLinecap="round"
-                      className="route-dash"
-                    />
-                    {/* 웨이포인트 점. 첫 번째(다음 목표)만 강조 */}
-                    {pts.slice(1).map((p, i) => (
-                      <circle
-                        key={i}
-                        cx={p.x}
-                        cy={p.y}
-                        r={i === 0 ? 6 : 4}
-                        fill={i === pts.length - 2 ? '#ef4444' : '#fbbf24'}
-                        stroke="#1b1230"
-                        strokeWidth={2}
-                        className={i === 0 ? 'wp-next' : ''}
-                      />
-                    ))}
-                  </>
-                );
-              })()}
-            </svg>
-          )}
-
-          {/* 맛집 깃발 */}
-          {markers.map((r) => {
-            const near = r.dist <= CONQUEST_RADIUS_M;
-            return (
-              <div
-                key={r.id}
-                className="absolute -translate-x-1/2 -translate-y-full"
-                style={{ left: r.x, top: r.y }}
-              >
-                <button
-                  onClick={() => {
-                    if (dragRef.current?.moved) return; // 드래그 중 클릭 무시
-                    setSelectedId(r.id);
-                  }}
-                  className="flex flex-col items-center hover:scale-110 transition-transform"
-                >
-                  {near && !r.conquered && (
-                    <span className="absolute bottom-3 left-1/2 -translate-x-1/2 w-8 h-8 rounded-full bg-amber-300/40 marker-ping" />
-                  )}
-                  <span className="relative block">
-                    <DotFlag conquered={r.conquered} size={36 * zoom} />
-                    {r.saved && !r.conquered && (
-                      <span className="absolute -top-1 -right-1 text-[12px] text-amber-300">★</span>
-                    )}
-                  </span>
-                  <span
-                    className={`font-pixel text-[10.5px] px-1 border border-[#1b1230] whitespace-nowrap ${
-                      r.conquered ? 'bg-emerald-400 text-[#1b1230]' : 'bg-red-500 text-white'
-                    }`}
-                  >
-                    {r.name}
-                  </span>
-                </button>
-              </div>
-            );
-          })}
-
-          {/* 공략 반경 */}
-          <div
-            className="absolute -translate-x-1/2 -translate-y-1/2 rounded-full border-2 border-dashed border-amber-300/50 pointer-events-none"
-            style={{ left: me.x, top: me.y, width: radiusPx * 2, height: radiusPx * 2 }}
-          />
-
-          {/* 내 캐릭터 — 이제 월드 위 실제 좌표에 선다 */}
-          <div
-            className="absolute -translate-x-1/2 -translate-y-1/2 z-10 pointer-events-none"
-            style={{ left: me.x, top: me.y }}
-          >
-            <span className="absolute left-1/2 -translate-x-1/2 bottom-0 w-8 h-2 bg-black/35 rounded-full blur-[1px]" />
-            <DotCharacter
-              color={costumes.colors.find((c) => c.id === user.costume.color)?.hex ?? '#3b82f6'}
-              hatId={user.costume.hat}
-              accessoryId={user.costume.accessory}
-              size={68 * zoom}
-              className="bob relative"
-            />
-            {/* 따라다니는 맛몬 */}
-            {pets.map((m, i) => (
-              <div
-                key={m.id}
-                className="absolute bob"
-                style={{
-                  left: (-40 + i * 36) * zoom,
-                  top: (18 + (i % 2) * 12) * zoom,
-                  animationDelay: `${i * 0.25}s`,
-                }}
-              >
-                <DotMatmon id={m.id} size={30 * zoom} />
-              </div>
-            ))}
-          </div>
-        </div>
-
-        {/* ── 오버레이 UI (지도와 함께 움직이지 않음) ── */}
-
-        {/* 줌 */}
-        <div className="absolute top-2 left-2 flex flex-col gap-1">
-          {ZOOMS.map((z) => (
-            <button
-              key={z}
-              onClick={() => setZoom(z)}
-              className={`w-9 h-8 text-[11.5px] border-2 border-[#1b1230] font-pixel ${
-                zoom === z ? 'bg-amber-300 text-[#1b1230]' : 'bg-[#1e163a]/90 text-slate-300'
-              }`}
-            >
-              x{z}
-            </button>
-          ))}
-        </div>
+      {/* 지도 — 카카오맵 (실제 지도 위에 도트 마커·캐릭터 오버레이) */}
+      <div className="pixel-panel relative overflow-hidden" style={{ height: VIEW_H }}>
+        <KakaoMap
+          pos={pos}
+          follow={follow}
+          onUserPan={() => setFollow(false)}
+          markers={markers}
+          route={route}
+          selectedId={selectedId}
+          onSelect={setSelectedId}
+        />
 
         {/* 내 위치로 */}
         <button
           onClick={centerOnMe}
-          className={`absolute top-2 right-2 px-3 py-2 text-[13px] pixel-btn ${
-            follow ? 'bg-emerald-400 text-[#1b1230]' : 'bg-[#2b2050] text-slate-200'
+          className={`absolute top-2 right-2 z-30 px-3 py-2 text-[13.5px] pixel-btn ${
+            follow ? 'bg-emerald-400 text-[#4a3324]' : 'bg-[#f1e3cf] text-[#4a3a29]'
           }`}
         >
           {follow ? '◎ 추적중' : '◎ 내 위치'}
@@ -589,28 +363,39 @@ export default function MapPage() {
 
         {/* 이동 패드 */}
         {isMock && (
-          <div className="absolute bottom-2 right-2 grid grid-cols-3 gap-1 text-[11.5px]">
+          <div className="absolute bottom-2 right-2 z-30 grid grid-cols-3 gap-1 text-[12.5px]">
             <span />
-            <button className="pixel-btn bg-[#2b2050] py-1" onClick={() => { nudge(25, 0); setFollow(true); }}>↑</button>
+            <button className="pixel-btn bg-[#f1e3cf] py-1" onClick={() => { nudge(25, 0); setFollow(true); }}>↑</button>
             <span />
-            <button className="pixel-btn bg-[#2b2050] py-1" onClick={() => { nudge(0, -25); setFollow(true); }}>←</button>
-            <button className="pixel-btn bg-[#2b2050] py-1" onClick={() => { nudge(-25, 0); setFollow(true); }}>↓</button>
-            <button className="pixel-btn bg-[#2b2050] py-1" onClick={() => { nudge(0, 25); setFollow(true); }}>→</button>
+            <button className="pixel-btn bg-[#f1e3cf] py-1" onClick={() => { nudge(0, -25); setFollow(true); }}>←</button>
+            <button className="pixel-btn bg-[#f1e3cf] py-1" onClick={() => { nudge(-25, 0); setFollow(true); }}>↓</button>
+            <button className="pixel-btn bg-[#f1e3cf] py-1" onClick={() => { nudge(0, 25); setFollow(true); }}>→</button>
           </div>
         )}
 
         {!route && (
-          <p className="absolute bottom-2 left-2 text-[11.5px] text-white/70 bg-black/40 px-2 py-1 pointer-events-none">
-            드래그·휠로 지도 이동 · 방향키로 캐릭터 이동
+          <p className="absolute bottom-2 left-2 z-30 text-[12.5px] text-white/80 bg-black/45 px-2 py-1 pointer-events-none">
+            드래그·핀치로 지도 이동 · 방향키/패드로 캐릭터 이동
           </p>
+        )}
+
+        {/* 필터 결과 없음 안내 */}
+        {markers.length === 0 && (
+          <div className="absolute inset-x-0 top-1/2 -translate-y-1/2 z-30 grid place-items-center pointer-events-none">
+            <p className="bg-black/55 text-white/90 text-[13.5px] px-3 py-2">
+              {mapFilter === '찜'
+                ? '찜한 맛집이 없습니다 — 게시판에서 ⭐를 눌러보세요'
+                : `'${mapFilter}' 조건에 맞는 맛집이 없습니다`}
+            </p>
+          </div>
         )}
 
         {/* 네비게이션 HUD */}
         {navInfo && !visit && (
-          <div className="absolute inset-x-0 bottom-0 bg-[#1b1230]/93 border-t-4 border-amber-300 p-3 slide-up">
+          <div className="absolute inset-x-0 bottom-0 z-40 bg-[#fffaf2]/95 border-t-4 border-amber-500 p-3 slide-up">
             <div className="flex items-center gap-3">
               {/* 방향 화살표 — 다음 웨이포인트 방위각 */}
-              <div className="w-11 h-11 shrink-0 grid place-items-center border-2 border-amber-300 bg-[#241a45]">
+              <div className="w-11 h-11 shrink-0 grid place-items-center border-2 border-amber-500 bg-[#f7ecdd]">
                 <span
                   className="text-2xl leading-none transition-transform duration-300"
                   style={{ transform: `rotate(${navInfo.bearing}deg)` }}
@@ -620,12 +405,12 @@ export default function MapPage() {
               </div>
 
               <div className="flex-1 min-w-0">
-                <p className="text-[13px] truncate">
-                  🧭 <span className="text-amber-300">{navInfo.target.name}</span> 안내 중
+                <p className="text-[13.5px] truncate">
+                  🧭 <span className="text-[#b45309]">{navInfo.target.name}</span> 안내 중
                 </p>
-                <p className="text-[11.5px] text-slate-300">
+                <p className="text-[12.5px] text-[#5d4a35]">
                   남은 거리{' '}
-                  <span className="font-pixel text-amber-300">
+                  <span className="font-pixel text-[#b45309]">
                     {navInfo.remainM < 1000
                       ? `${Math.round(navInfo.remainM)}m`
                       : `${(navInfo.remainM / 1000).toFixed(2)}km`}
@@ -638,14 +423,14 @@ export default function MapPage() {
                 {isMock && (
                   <button
                     onClick={() => setWalking(!walking)}
-                    className={`pixel-btn px-2 py-1 text-[11.5px] ${
-                      walking ? 'bg-emerald-400 text-[#1b1230]' : 'bg-[#2b2050] text-slate-200'
+                    className={`pixel-btn px-2 py-1 text-[12.5px] ${
+                      walking ? 'bg-emerald-400 text-[#4a3324]' : 'bg-[#f1e3cf] text-[#4a3a29]'
                     }`}
                   >
                     {walking ? '⏸ 정지' : '▶ 자동이동'}
                   </button>
                 )}
-                <button onClick={stopNav} className="pixel-btn bg-red-500 px-2 py-1 text-[11.5px]">
+                <button onClick={stopNav} className="pixel-btn bg-red-500 px-2 py-1 text-[12.5px]">
                   ✕ 취소
                 </button>
               </div>
@@ -655,12 +440,12 @@ export default function MapPage() {
 
         {/* 공략 진행 오버레이 — 진행률은 시작 시각 기준으로 계산 */}
         {visit && (
-          <div className="absolute inset-x-0 top-0 bg-[#1b1230]/92 border-b-4 border-amber-300 p-3">
-            <p className="text-[13px] text-amber-300">
+          <div className="absolute inset-x-0 top-0 z-40 bg-[#fffaf2]/95 border-b-4 border-amber-500 p-3">
+            <p className="text-[13.5px] text-[#b45309]">
               공략 중... 반경 {CONQUEST_RADIUS_M}m 안에서 대기하세요 (화면을 나가도 유지됩니다)
             </p>
             <div className="mt-1 flex items-center gap-2">
-              <div className="flex-1 h-3 bg-[#241a45] border-2 border-[#1b1230] overflow-hidden">
+              <div className="flex-1 h-3 bg-[#f7ecdd] border-2 border-[#4a3324] overflow-hidden">
                 <div
                   className="h-full bg-amber-300 transition-[width] duration-1000 ease-linear relative"
                   style={{
@@ -670,13 +455,13 @@ export default function MapPage() {
                   <span className="absolute inset-0 shimmer" />
                 </div>
               </div>
-              <span className="text-[13px] tabular">
+              <span className="text-[13.5px] tabular">
                 {String(Math.floor(remaining / 60)).padStart(2, '0')}:
                 {String(remaining % 60).padStart(2, '0')}
               </span>
               <button
                 onClick={cancelVisit}
-                className="text-[11.5px] px-2 py-1 pixel-btn bg-red-500"
+                className="text-[12.5px] px-2 py-1 pixel-btn bg-red-500"
               >
                 중단
               </button>
@@ -687,23 +472,23 @@ export default function MapPage() {
 
       {/* 가까운 맛집 */}
       <div className="pixel-panel p-3">
-        <p className="text-[13px] text-slate-400 mb-2">가까운 맛집</p>
+        <p className="text-[13.5px] text-[#7d6549] mb-2">가까운 맛집</p>
         <div className="space-y-1.5">
           {nearby.map((r) => (
-            <div key={r.id} className="flex items-center gap-2 text-[13px] min-h-11">
+            <div key={r.id} className="flex items-center gap-2 text-[13.5px] min-h-11">
               <DotFood category={r.category} size={26} />
               <button
                 onClick={() => setSelectedId(r.id)}
-                className="flex-1 truncate text-left hover:text-amber-300 transition-colors py-2"
+                className="flex-1 truncate text-left hover:text-[#b45309] transition-colors py-2"
               >
                 {r.name}
               </button>
-              <span className={r.dist <= CONQUEST_RADIUS_M ? 'text-emerald-300' : 'text-slate-400'}>
+              <span className={r.dist <= CONQUEST_RADIUS_M ? 'text-emerald-700' : 'text-[#7d6549]'}>
                 {r.dist < 1000 ? `${Math.round(r.dist)}m` : `${(r.dist / 1000).toFixed(1)}km`}
               </span>
               <button
                 onClick={() => startNav(r)}
-                className="px-3 py-1.5 pixel-btn bg-sky-400 text-[#1b1230] text-[11.5px]"
+                className="px-3 py-1.5 pixel-btn bg-sky-400 text-[#4a3324] text-[12.5px]"
               >
                 길찾기
               </button>
@@ -715,7 +500,7 @@ export default function MapPage() {
                     setFollow(true);
                     stopNav();
                   }}
-                  className="px-2 py-1.5 pixel-btn bg-[#2b2050] text-[11.5px]"
+                  className="px-2 py-1.5 pixel-btn bg-[#f1e3cf] text-[12.5px]"
                 >
                   워프
                 </button>
@@ -725,39 +510,42 @@ export default function MapPage() {
         </div>
       </div>
 
-      {/* 맛집 상세 모달 */}
-      {selected && (
+      {/* 일반 레이드 — 모르는 사람들과 파티 모아 함께 밥 먹고 인원수만큼 보상 */}
+      <PublicRaidPanel />
+
+      {/* 맛집 상세 모달 — body 로 포탈(페이지 transform 밖) → 뷰포트 정중앙 고정 */}
+      {selected && createPortal(
         <div
-          className="fixed inset-0 z-50 bg-black/70 flex items-end justify-center fade-in"
+          className="fixed inset-0 z-50 bg-black/70 flex items-center justify-center p-4 fade-in"
           onClick={() => setSelectedId(null)}
         >
           <div
-            className="w-full max-w-[480px] pixel-panel p-5 space-y-3 pop-in"
+            className="w-full max-w-[460px] max-h-[88vh] overflow-y-auto pixel-panel p-5 space-y-3 pop-in"
             onClick={(e) => e.stopPropagation()}
           >
             <div className="flex items-start gap-3">
               <DotFood category={selected.category} size={52} />
               <div className="flex-1 min-w-0">
                 <p className="text-base">{selected.name}</p>
-                <p className="text-[13px] text-slate-400">
+                <p className="text-[13.5px] text-[#7d6549]">
                   {selected.category} · {selected.address}
                 </p>
-                <p className="text-[13px] text-amber-300 mt-1">
+                <p className="text-[13.5px] text-[#b45309] mt-1">
                   ★ {ratingOf(selected).toFixed(1)} · 공략법 {selected.reviews.length}개
                 </p>
               </div>
               <span
-                className={`text-[11.5px] px-2 py-1 border-2 border-[#1b1230] ${
-                  selected.conquered ? 'bg-emerald-400 text-[#1b1230]' : 'bg-red-500'
+                className={`text-[12.5px] px-2 py-1 border-2 border-[#4a3324] ${
+                  selected.conquered ? 'bg-emerald-400 text-[#4a3324]' : 'bg-red-500'
                 }`}
               >
                 {selected.conquered ? '공략 완료' : '미공략'}
               </span>
             </div>
 
-            <p className="text-[13px] text-slate-300">
+            <p className="text-[13.5px] text-[#5d4a35]">
               현재 거리{' '}
-              <span className={canVisit ? 'text-emerald-300' : 'text-red-300'}>
+              <span className={canVisit ? 'text-emerald-700' : 'text-red-600'}>
                 {Math.round(selectedDist)}m
               </span>{' '}
               / 공략 반경 {CONQUEST_RADIUS_M}m
@@ -769,7 +557,7 @@ export default function MapPage() {
                 <button
                   disabled={selected.conquered || !!visit}
                   onClick={() => startVisit(selected.id, totalSeconds)}
-                  className="flex-1 pixel-btn bg-amber-300 text-[#1b1230] py-2.5 text-sm"
+                  className="flex-1 pixel-btn bg-amber-300 text-[#4a3324] py-2.5 text-sm"
                 >
                   {selected.conquered
                     ? '이미 공략함'
@@ -778,20 +566,21 @@ export default function MapPage() {
               ) : (
                 <button
                   onClick={() => startNav(selected)}
-                  className="flex-1 pixel-btn bg-sky-400 text-[#1b1230] py-2.5 text-sm"
+                  className="flex-1 pixel-btn bg-sky-400 text-[#4a3324] py-2.5 text-sm"
                 >
                   🧭 길찾기 시작
                 </button>
               )}
               <button
                 onClick={() => navigate(`/board/${selected.id}`)}
-                className="pixel-btn bg-[#2b2050] px-4 text-sm"
+                className="pixel-btn bg-[#f1e3cf] px-4 text-sm"
               >
                 게시판
               </button>
             </div>
           </div>
-        </div>
+        </div>,
+        document.body
       )}
     </div>
   );

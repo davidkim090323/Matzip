@@ -1,16 +1,19 @@
 @import 'tailwindcss';
 
+/* ── 따뜻한 크림 라이트 테마 ─────────────────────────────
+   다크 퍼플 던전 → 크림·베이지 + 브라운 테두리 + 오렌지 포인트.
+   "동물의 숲" 같은 밝고 친근한 무드로 전환하면서 글자 대비를 크게 올렸다. */
 :root {
-  --ink: #1b1230;
-  --panel: #1e163a;
-  --panel-2: #241a45;
-  --line: #4c3f7a;
-  --gold: #fbbf24;
+  --ink: #4a3324;      /* 테두리/그림자/버튼 텍스트 (다크 브라운) */
+  --panel: #fffaf2;    /* 카드 표면 */
+  --panel-2: #f7ecdd;  /* 입력창/칩 표면 */
+  --line: #e2cfae;     /* 옅은 구분선 */
+  --gold: #f59e0b;
+  --text: #3d2c1e;     /* 본문 (진갈색, 고대비) */
 }
 
 * {
   -webkit-tap-highlight-color: transparent;
-  /* iOS 에서 100vh 가 주소창 높이를 포함해 잘리는 문제 → 동적 뷰포트 단위 사용 */
   -webkit-text-size-adjust: 100%;
 }
 
@@ -38,11 +41,11 @@ body {
   line-height: 1.6;
   letter-spacing: -0.015em;
   background:
-    radial-gradient(circle at 15% -5%, #33265e 0%, transparent 45%),
-    radial-gradient(circle at 85% 105%, #12405a 0%, transparent 45%),
-    #100c1f;
+    radial-gradient(circle at 15% -5%, #ffe9c7 0%, transparent 45%),
+    radial-gradient(circle at 85% 105%, #ffe0d1 0%, transparent 45%),
+    #fdf4e7;
   background-attachment: fixed;
-  color: #f1f5f9;
+  color: var(--text);
   overflow-x: hidden;
 }
 
@@ -63,35 +66,15 @@ h1, h2, h3 { letter-spacing: -0.03em; }
 .tabular { font-variant-numeric: tabular-nums; font-weight: 700; }
 
 /* 본문 대비 확보 */
-.text-body { color: #e2e8f0; }
-.text-muted { color: #a3aec2; }
-
-/* CRT 스캔라인 — 고해상도 모바일에선 텍스트를 갉아먹어서 아주 옅게만 */
-body::after {
-  content: '';
-  position: fixed;
-  inset: 0;
-  pointer-events: none;
-  z-index: 100;
-  background: repeating-linear-gradient(
-    0deg,
-    rgba(0, 0, 0, 0.07) 0px,
-    rgba(0, 0, 0, 0.07) 1px,
-    transparent 1px,
-    transparent 4px
-  );
-  mix-blend-mode: multiply;
-}
-@media (max-width: 480px) {
-  body::after { opacity: 0.5; }
-}
+.text-body { color: #4a3a29; }
+.text-muted { color: #7d6549; }
 
 /* ── 패널 / 버튼 ───────────────────────────────────────── */
 .pixel-panel {
-  background: linear-gradient(180deg, rgba(43, 32, 80, 0.95), rgba(30, 22, 58, 0.95));
-  border: 3px solid var(--line);
-  box-shadow: inset 0 2px 0 0 rgba(255, 255, 255, 0.06), inset 0 0 0 3px #241a45,
-    0 6px 0 0 rgba(0, 0, 0, 0.5);
+  background: linear-gradient(180deg, #fffdf8, var(--panel));
+  border: 3px solid var(--ink);
+  box-shadow: inset 0 2px 0 0 rgba(255, 255, 255, 0.8), inset 0 0 0 3px var(--panel-2),
+    0 5px 0 0 rgba(74, 51, 36, 0.35);
 }
 
 .pixel-btn {
@@ -101,12 +84,12 @@ body::after {
   position: relative;
   overflow: hidden;
 }
-.pixel-btn:hover:not(:disabled) { filter: brightness(1.12); }
+.pixel-btn:hover:not(:disabled) { filter: brightness(1.05); }
 .pixel-btn:active:not(:disabled) {
   transform: translateY(4px);
   box-shadow: 0 0 0 0 var(--ink);
 }
-.pixel-btn:disabled { opacity: 0.4; cursor: not-allowed; }
+.pixel-btn:disabled { opacity: 0.45; cursor: not-allowed; }
 
 /* 버튼 위를 훑고 지나가는 광택 */
 .pixel-btn::before {
@@ -116,7 +99,7 @@ body::after {
   left: -60%;
   width: 40%;
   height: 100%;
-  background: linear-gradient(100deg, transparent, rgba(255, 255, 255, 0.45), transparent);
+  background: linear-gradient(100deg, transparent, rgba(255, 255, 255, 0.55), transparent);
   transform: skewX(-20deg);
   transition: left 0.5s ease;
 }
@@ -128,7 +111,7 @@ body::after {
 }
 .lift:hover {
   transform: translateY(-3px);
-  box-shadow: 0 10px 0 -2px rgba(0, 0, 0, 0.5), 0 0 22px -6px var(--gold);
+  box-shadow: 0 9px 0 -2px rgba(74, 51, 36, 0.3), 0 0 22px -6px var(--gold);
 }
 .lift:active { transform: translateY(0); }
 
@@ -250,6 +233,50 @@ body::after {
 }
 .drop-in { animation: drop-in 0.35s ease-out both; }
 
+/* 로그인 배경 장식 이모지 — 천천히 위아래로 떠다닌다 */
+@keyframes float-slow {
+  0%, 100% { transform: translateY(0) rotate(var(--r, 0deg)); }
+  50% { transform: translateY(-16px) rotate(var(--r, 0deg)); }
+}
+.float-slow { animation: float-slow var(--d, 6s) ease-in-out infinite; }
+
+/* 로고 뒤 은은한 광채 링 */
+@keyframes glow-pulse {
+  0%, 100% { opacity: 0.55; transform: scale(1); }
+  50% { opacity: 0.9; transform: scale(1.08); }
+}
+.glow-pulse { animation: glow-pulse 3s ease-in-out infinite; }
+
+/* ── 캐릭터 아우라(효과) ─────────────────────────────────── */
+.aura { position: absolute; inset: 0; border-radius: 9999px; pointer-events: none; }
+.aura-ring {
+  background: radial-gradient(circle, transparent 50%, var(--aura) 62%, transparent 74%);
+  opacity: 0.85; animation: aura-breathe 2.6s ease-in-out infinite;
+}
+.aura-pulse { background: var(--aura); opacity: 0.4; animation: aura-ping 1.6s ease-out infinite; }
+.aura-sparkle {
+  background: conic-gradient(from 0deg, transparent, var(--aura), transparent, var(--aura), transparent);
+  filter: blur(2px); opacity: 0.7; animation: aura-spin 3.4s linear infinite;
+}
+.aura-flame {
+  background: radial-gradient(circle at 50% 75%, var(--aura), transparent 60%);
+  filter: blur(1px); opacity: 0.8; animation: aura-flicker 0.5s ease-in-out infinite alternate;
+}
+.aura-orbit { animation: aura-breathe 3s ease-in-out infinite; }
+.aura-orbit::before {
+  content: ''; position: absolute; width: 24%; height: 24%; border-radius: 9999px;
+  top: -6%; left: 50%; margin-left: -12%; background: var(--aura); box-shadow: 0 0 8px var(--aura);
+  transform-origin: 12% 320%; animation: aura-spin 2.4s linear infinite;
+}
+.aura-rainbow {
+  background: conic-gradient(from 0deg, #f43f5e, #fb923c, #facc15, #4ade80, #38bdf8, #a855f7, #f43f5e);
+  filter: blur(3px); opacity: 0.6; animation: aura-spin 2.8s linear infinite;
+}
+@keyframes aura-breathe { 0%,100% { transform: scale(0.92); opacity: 0.7; } 50% { transform: scale(1.08); opacity: 1; } }
+@keyframes aura-ping { 0% { transform: scale(0.6); opacity: 0.5; } 100% { transform: scale(1.2); opacity: 0; } }
+@keyframes aura-spin { to { transform: rotate(360deg); } }
+@keyframes aura-flicker { from { opacity: 0.65; transform: scaleY(0.95); } to { opacity: 0.95; transform: scaleY(1.06); } }
+
 /* 접근성: 모션 최소화 설정을 존중 */
 @media (prefers-reduced-motion: reduce) {
   *, *::before, *::after {
@@ -261,5 +288,23 @@ body::after {
 
 /* 스크롤바 */
 ::-webkit-scrollbar { width: 8px; height: 8px; }
-::-webkit-scrollbar-track { background: #1b1230; }
-::-webkit-scrollbar-thumb { background: var(--line); border: 2px solid #1b1230; }
+::-webkit-scrollbar-track { background: var(--panel-2); }
+::-webkit-scrollbar-thumb { background: #d3ba92; border: 2px solid var(--panel-2); }
+
+/* ── 카카오맵 마커 오버레이 ─────────────────────────── */
+.mk { display: flex; flex-direction: column; align-items: center; cursor: pointer; }
+.mk-pin { line-height: 0; filter: drop-shadow(0 2px 0 rgba(0,0,0,0.45)); }
+.mk-pin > svg { display: block; }
+.mk-emb {
+  font-size: 15px; line-height: 1.35; background: #fde68a;
+  border: 2px solid #4a3324; padding: 0 3px;
+  filter: drop-shadow(0 2px 0 rgba(0,0,0,0.45));
+}
+.mk-name {
+  display: none; margin-top: 1px; font-size: 11px; line-height: 1.25;
+  padding: 1px 4px; border: 1.5px solid #4a3324; white-space: nowrap;
+  max-width: 128px; overflow: hidden; text-overflow: ellipsis; font-weight: 600;
+}
+.mk-zoomed .mk-name { display: block; }
+.mk-sel { z-index: 20; }
+.mk-sel .mk-name { display: block; outline: 2px solid #b45309; }
